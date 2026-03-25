@@ -1,20 +1,36 @@
 import CustomersTable from "../_components/CustomersTable";
-import { Customer } from "../_interfaces/customers";
+import { Customer } from "../_interfaces/customer";
+import { Paginated } from "../_interfaces/paginated";
 
-async function getAllCustomers(): Promise<Customer[]> {
+async function getAllCustomers(): Promise<Paginated<Customer>> {
   try {
-    const response = await fetch("http://localhost:3001/customers", {
+    const response = await fetch("http://localhost:3001/customers/?limit=2&page=1", {
       cache: "no-store",
     });
 
     if (!response.ok) {
       throw new Error("Could not get customers!");
     }
-    const data: Customer[] = await response.json();
+    const data: Paginated<Customer> = await response.json();
     return data;
   } catch (error) {
     console.error(error);
-    return [];
+    return {
+      data:[],
+      meta:{
+        itemsPerPage:0,
+        totalPages:1,
+        currentPage:1,
+        totalItems:0
+      },
+      links: {
+        first: "",
+        last: "",
+        current: "",
+        next:"",
+        previous:""
+      }
+    }
   }
 }
 

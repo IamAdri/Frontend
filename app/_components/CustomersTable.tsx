@@ -1,8 +1,10 @@
 "use client";
 
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
-import React from "react";
-import { Customer } from "../_interfaces/customers";
+import React, { useState } from "react";
+import { Paginated } from "../_interfaces/paginated";
+import { Customer } from "../_interfaces/customer";
+import { useQuery } from "@tanstack/react-query";
 /*
 const rows: GridRowsProp = [
   {
@@ -29,24 +31,82 @@ const columns: GridColDef[] = [
   { field: "deadline", headerName: "Deadline", width: 200 },
 ];
 interface CustomersTableProps {
-  customers: Customer[]; // array de Customer
+  customers: Paginated<Customer>; // array de Customer
 }
 
-function CustomersTable({ customers }: CustomersTableProps) {
-  console.log(customers);
+async function getAllCustomers(): Promise<Paginated<Customer>> {
+  try {
+    const response = await fetch("http://localhost:3001/customers/?limit=2&page=1", {
+      cache: "no-store",
+    });
 
-  const rows: GridRowsProp = customers.map((customer) => {
+    if (!response.ok) {
+      throw new Error("Could not get customers!");
+    }
+    const data: Paginated<Customer> = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return {
+      data:[],
+      meta:{
+        itemsPerPage:0,
+        totalPages:1,
+        currentPage:1,
+        totalItems:0
+      },
+      links: {
+        first: "",
+        last: "",
+        current: "",
+        next:"",
+        previous:""
+      }
+    }
+  }
+}
+
+
+function CustomersTable({ customers }: CustomersTableProps) {
+  const [customersPageList, setCustomersPageList] = useState(customers);
+  const [paginationModel, setPaginationModel] = useState({
+  pageSize: customers.meta.itemsPerPage,
+  page: customers.meta.currentPage,
+});
+const [loading, setLoading] = useState(false);
+console.log(paginationModel)
+
+const query = useQuery({queryKey: ['customers'], queryFn: getAllCustomers})
+console.log(query.data)
+  const rows: GridRowsProp = customersPageList.data.map((customer) => {
     return {
       ...customer,
       createdAt: new Date(customer.createdAt).toLocaleDateString("ro-RO"),
       deadline: new Date(customer.deadline).toLocaleDateString("ro-RO"),
     };
   });
-
+const handleClick=async(e)=>{
+  e.preventDefault();
+const response = await fetch(customers.links.first);
+const data = await response.json();
+console.log(data)
+setCustomersPageList(data)
+}
   return (
+    <>
+    <button onClick={handleClick}>First page</button>
     <div style={{ height: 700, width: "100%" }}>
-      <DataGrid rows={rows} columns={columns} />
-    </div>
+      <DataGrid rows={rows} 
+      columns={columns} 
+      rowCount={customers.meta.totalItems}
+      pagination
+      paginationMode="server"
+      pageSizeOptions={[2, 10, 15]}
+      paginationModel={paginationModel}
+  onPaginationModelChange={setPaginationModel}
+  loading={loading}   />
+    </div></>
+     
   );
 }
 

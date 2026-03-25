@@ -1,11 +1,11 @@
-export interface Customer {
-  id: number;
-  companyName: string;
+export interface Customer{
+    id:number;
+    companyName: string;
   contactName: string;
   contactEmail: string;
   industry: string;
   projectType: string;
   status: string;
-  createdAt: Date;
+  createdAt: string;
   deadline: Date;
 }

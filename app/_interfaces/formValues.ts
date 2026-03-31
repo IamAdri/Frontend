@@ -1,5 +1,6 @@
 export interface FormValues {
-    companyName: string;
+  id?: number;
+  companyName: string;
   contactName: string;
   contactEmail: string;
   industry: string;

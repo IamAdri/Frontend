@@ -1,4 +1,4 @@
-export interface FormValues {
+export interface FormValuesCustomer {
   id?: number;
   companyName: string;
   contactName: string;
@@ -7,4 +7,6 @@ export interface FormValues {
   projectType: string;
   status: string;
   deadline: Date;
+  teamMember1: string;
+  teamMember2: string;
 }

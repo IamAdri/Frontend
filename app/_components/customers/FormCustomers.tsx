@@ -1,40 +1,36 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { FormValues } from "../_interfaces/formValues";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import { Customer } from "../_interfaces/customer";
+import { Customer } from "@/app/_interfaces/customer";
+import { FormValuesCustomer } from "@/app/_interfaces/formValuesCustomer";
+import { useQuery } from "@tanstack/react-query";
+import { getAllTeamMembersNames } from "@/app/_lib/data-service-team-members";
 
 type FormProps = {
-  openForm: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedCustomer?: Customer;
-  mutationFunction: any;
+  closeEditForm: () => void;
+  selectedRow?: Customer;
+  submitEditedRow: (data: FormValuesCustomer) => void;
 };
 
-function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
+function FormCustomers({
+  closeEditForm,
+  selectedRow,
+  submitEditedRow,
+}: FormProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
-  } = useForm<FormValues>();
+  } = useForm<FormValuesCustomer>();
 
   const formRef = useRef<HTMLFormElement | null>(null);
-  const queryClient = useQueryClient();
 
-  const mutation = useMutation<void, unknown, FormValues>({
-    mutationFn: (data) => mutationFunction(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-    },
-  });
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (!formRef.current) return;
       if (!formRef.current.contains(e.target as Node)) {
-        reset();
-        openForm(false);
+        closeEditForm();
       }
     }
     document.addEventListener("click", handleClick);
@@ -43,29 +39,26 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
     };
   });
 
-  const handleSubmitForm = async (data: FormValues) => {
-    console.log(data);
-    mutation.mutate(data);
-    reset();
-    openForm(false);
-  };
-
-  const handleCloseForm = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    reset();
-    openForm(false);
-  };
+  const {
+    isLoading,
+    isFetching,
+    data: teamMembersNames,
+    error,
+  } = useQuery({
+    queryKey: ["team-members-names"],
+    queryFn: getAllTeamMembersNames,
+  });
 
   return (
     <div className="fixed top-0 left-0 w-full h-screen bg-black/30 backdrop-blur-sm z-[1000] transition-all duration-500 ">
       <form
         ref={formRef}
-        onSubmit={handleSubmit((data) => handleSubmitForm(data))}
+        onSubmit={handleSubmit((data) => submitEditedRow(data))}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg px-16 py-12 transition-all duration-500 flex flex-col gap-3"
       >
         <button
           type="button"
-          onClick={handleCloseForm}
+          onClick={closeEditForm}
           className="absolute top-0 right-0 cursor-pointer"
         >
           <CancelOutlinedIcon color="action" fontSize="large" />
@@ -75,7 +68,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <input
             type="text"
             id="companyName"
-            defaultValue={selectedCustomer?.companyName || ""}
+            defaultValue={selectedRow?.companyName || ""}
             placeholder="Company name"
             {...register("companyName")}
             required
@@ -87,7 +80,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <input
             type="text"
             id="contactName"
-            defaultValue={selectedCustomer?.contactName || ""}
+            defaultValue={selectedRow?.contactName || ""}
             placeholder="Contact name"
             {...register("contactName")}
             required
@@ -99,7 +92,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <input
             type="email"
             id="contactEmail"
-            defaultValue={selectedCustomer?.contactEmail || ""}
+            defaultValue={selectedRow?.contactEmail || ""}
             placeholder="Contact email"
             {...register("contactEmail")}
             required
@@ -111,7 +104,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <input
             type="text"
             id="industry"
-            defaultValue={selectedCustomer?.industry || ""}
+            defaultValue={selectedRow?.industry || ""}
             placeholder="Industry"
             {...register("industry")}
             required
@@ -124,7 +117,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <select
             id="projectType"
             {...register("projectType")}
-            defaultValue={selectedCustomer?.projectType || ""}
+            defaultValue={selectedRow?.projectType || ""}
             required
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           >
@@ -137,7 +130,7 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <label htmlFor="status">Status: </label>
           <select
             id="status"
-            defaultValue={selectedCustomer?.status || ""}
+            defaultValue={selectedRow?.status || ""}
             {...register("status")}
             required
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
@@ -153,16 +146,53 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
           <input
             type="date"
             id="deadline"
-            defaultValue={selectedCustomer?.deadline}
+            defaultValue={selectedRow?.deadline}
             {...register("deadline")}
             required
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
         </div>
+
+        <div>
+          <label htmlFor="teamMember1">First team member: </label>
+          <select
+            id="teamMember1"
+            defaultValue={selectedRow?.teamMembers[0]}
+            {...register("teamMember1")}
+            required
+            className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
+          >
+            <option value="none">none</option>
+            {teamMembersNames?.length > 0 &&
+              teamMembersNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="teamMember2">Second team member: </label>
+          <select
+            id="teamMember2"
+            defaultValue={selectedRow?.teamMembers[1]}
+            {...register("teamMember2")}
+            required
+            className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
+          >
+            <option value="none">none</option>
+            {teamMembersNames?.length > 0 &&
+              teamMembersNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+          </select>
+        </div>
         <div>
           <input
             type="hidden"
-            value={selectedCustomer?.id}
+            value={selectedRow?.id}
             {...register("id")}
             required
           />
@@ -176,4 +206,4 @@ function Form({ openForm, selectedCustomer, mutationFunction }: FormProps) {
   );
 }
 
-export default Form;
+export default FormCustomers;

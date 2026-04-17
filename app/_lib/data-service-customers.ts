@@ -1,5 +1,5 @@
 import { Customer } from "../_interfaces/customer";
-import { FormValues } from "../_interfaces/formValues";
+import { FormValuesCustomer } from "../_interfaces/formValuesCustomer";
 import { Paginated } from "../_interfaces/paginated";
 
 export async function getAllCustomers({
@@ -20,7 +20,12 @@ export async function getAllCustomers({
   return data;
 }
 
-export async function postCustomer(data: FormValues) {
+export async function postCustomer(data: FormValuesCustomer) {
+  const teamMember1 = data.teamMember1 === "none" ? "" : data.teamMember1;
+  const teamMember2 = data.teamMember2 === "none" ? "" : data.teamMember2;
+  const teamMembers = [];
+  if (teamMember1 !== "") teamMembers.push(teamMember1);
+  if (teamMember2 !== "") teamMembers.push(teamMember2);
   const response = await fetch("http://localhost:3001/customers", {
     method: "POST",
     headers: {
@@ -34,12 +39,14 @@ export async function postCustomer(data: FormValues) {
       projectType: data.projectType,
       status: data.status,
       deadline: data.deadline,
+      teamMembers: teamMembers,
     }),
   });
   const postedCustomer = await response.json();
 }
 
-export async function updateCustomer(data: FormValues) {
+export async function updateCustomer(data: FormValuesCustomer) {
+  const teamMembers = [data.teamMember1, data.teamMember2];
   const response = await fetch(`http://localhost:3001/customers/${data.id}`, {
     method: "PATCH",
     headers: {
@@ -53,6 +60,7 @@ export async function updateCustomer(data: FormValues) {
       projectType: data.projectType,
       status: data.status,
       deadline: data.deadline,
+      teamMembers: teamMembers,
     }),
   });
   const postedCustomer = await response.json();

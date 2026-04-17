@@ -8,4 +8,5 @@ export interface Customer {
   status: string;
   createdAt: string;
   deadline: string;
+  teamMembers: string[];
 }

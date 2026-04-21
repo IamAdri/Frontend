@@ -1,4 +1,4 @@
-type PaginationModel = {
+interface PaginationModel {
   pageSize: number;
   page: number;
-};
+}

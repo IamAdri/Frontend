@@ -4,61 +4,65 @@ import { useForm } from "react-hook-form";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { Customer } from "@/app/_interfaces/customer";
 import { FormValuesCustomer } from "@/app/_interfaces/formValuesCustomer";
-import { useQuery } from "@tanstack/react-query";
-import { getAllTeamMembersNames } from "@/app/_lib/data-service-team-members";
 
 type FormProps = {
-  closeEditForm: () => void;
-  selectedRow?: Customer;
-  submitEditedRow: (data: FormValuesCustomer) => void;
+  onClose: () => void;
+  selectedRow?: Customer | null;
+  onSubmit: (data: FormValuesCustomer) => void;
+  isSubmitting?: boolean;
 };
 
 function FormCustomers({
-  closeEditForm,
+  onClose,
   selectedRow,
-  submitEditedRow,
+  onSubmit,
+  isSubmitting,
 }: FormProps) {
+  const defaultValues = selectedRow
+    ? {
+        id: selectedRow.id,
+        companyName: selectedRow.companyName,
+        contactName: selectedRow.contactName,
+        contactEmail: selectedRow.contactEmail,
+        industry: selectedRow.industry,
+        projectType: selectedRow.projectType,
+        status: selectedRow.status,
+        deadline: selectedRow.deadline,
+      }
+    : {};
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValuesCustomer>();
+  } = useForm<FormValuesCustomer>({
+    defaultValues: defaultValues as FormValuesCustomer,
+  });
 
+  //Side effect when clicking outside the form
   const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (!formRef.current) return;
-      if (!formRef.current.contains(e.target as Node)) {
-        closeEditForm();
+      if (formRef.current && !formRef.current.contains(e.target as Node)) {
+        onClose();
       }
     }
     document.addEventListener("click", handleClick);
     return () => {
       document.removeEventListener("click", handleClick);
     };
-  });
-
-  const {
-    isLoading,
-    isFetching,
-    data: teamMembersNames,
-    error,
-  } = useQuery({
-    queryKey: ["team-members-names"],
-    queryFn: getAllTeamMembersNames,
-  });
+  }, [onClose]);
 
   return (
     <div className="fixed top-0 left-0 w-full h-screen bg-black/30 backdrop-blur-sm z-[1000] transition-all duration-500 ">
       <form
         ref={formRef}
-        onSubmit={handleSubmit((data) => submitEditedRow(data))}
+        onSubmit={handleSubmit(onSubmit)}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg px-16 py-12 transition-all duration-500 flex flex-col gap-3"
       >
         <button
           type="button"
-          onClick={closeEditForm}
+          onClick={onClose}
           className="absolute top-0 right-0 cursor-pointer"
         >
           <CancelOutlinedIcon color="action" fontSize="large" />
@@ -68,71 +72,85 @@ function FormCustomers({
           <input
             type="text"
             id="companyName"
-            defaultValue={selectedRow?.companyName || ""}
             placeholder="Company name"
-            {...register("companyName")}
-            required
+            {...register("companyName", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
+          {errors.companyName && (
+            <span className="text-red-500 text-xs">
+              {errors.companyName.message}
+            </span>
+          )}
         </div>
         <div>
           <label htmlFor="contactName">Contact name: </label>
           <input
             type="text"
             id="contactName"
-            defaultValue={selectedRow?.contactName || ""}
             placeholder="Contact name"
-            {...register("contactName")}
-            required
+            {...register("contactName", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
+          {errors.contactName && (
+            <span className="text-red-500 text-xs">
+              {errors.contactName.message}
+            </span>
+          )}
         </div>
         <div>
           <label htmlFor="contactEmail">Contact email: </label>
           <input
             type="email"
             id="contactEmail"
-            defaultValue={selectedRow?.contactEmail || ""}
             placeholder="Contact email"
-            {...register("contactEmail")}
-            required
+            {...register("contactEmail", {
+              required: "This field is required",
+            })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
+          {errors.contactEmail && (
+            <span className="text-red-500 text-xs">
+              {errors.contactEmail.message}
+            </span>
+          )}
         </div>
         <div>
           <label htmlFor="industry">Industry: </label>
           <input
             type="text"
             id="industry"
-            defaultValue={selectedRow?.industry || ""}
             placeholder="Industry"
-            {...register("industry")}
-            required
+            {...register("industry", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
+          {errors.industry && (
+            <span className="text-red-500 text-xs">
+              {errors.industry.message}
+            </span>
+          )}
         </div>
-
         <div>
           <label htmlFor="projectType">Project type: </label>
           <select
             id="projectType"
-            {...register("projectType")}
-            defaultValue={selectedRow?.projectType || ""}
-            required
+            {...register("projectType", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           >
             <option value="crm">CRM</option>
             <option value="web_platform">Web platform</option>
             <option value="erp">ERP</option>
           </select>
+          {errors.projectType && (
+            <span className="text-red-500 text-xs">
+              {errors.projectType.message}
+            </span>
+          )}
         </div>
         <div>
           <label htmlFor="status">Status: </label>
           <select
             id="status"
-            defaultValue={selectedRow?.status || ""}
-            {...register("status")}
-            required
+            {...register("status", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           >
             <option value="scheduled">Scheduled</option>
@@ -140,20 +158,44 @@ function FormCustomers({
             <option value="test">Test</option>
             <option value="finished">Finished</option>
           </select>
+          {errors.status && (
+            <span className="text-red-500 text-xs">
+              {errors.status.message}
+            </span>
+          )}
         </div>
         <div>
           <label htmlFor="deadline">Deadline: </label>
           <input
             type="date"
             id="deadline"
-            defaultValue={selectedRow?.deadline}
-            {...register("deadline")}
-            required
+            {...register("deadline", { required: "This field is required" })}
             className="border border-gray-500 px-3 rounded-sm focus:text-gray-900"
           />
+          {errors.deadline && (
+            <span className="text-red-500 text-xs">
+              {errors.deadline.message}
+            </span>
+          )}
         </div>
+        <button
+          className="cursor-pointer border border-gray-500 px-3"
+          type="submit"
+        >
+          {isSubmitting
+            ? "Saving..."
+            : selectedRow?.id
+              ? "Update Customer"
+              : "Create Customer"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
-        <div>
+export default FormCustomers;
+/**
+ *  <div>
           <label htmlFor="teamMember1">First team member: </label>
           <select
             id="teamMember1"
@@ -189,21 +231,8 @@ function FormCustomers({
               ))}
           </select>
         </div>
-        <div>
-          <input
-            type="hidden"
-            value={selectedRow?.id}
-            {...register("id")}
-            required
-          />
-        </div>
-        <input
-          className="cursor-pointer border border-gray-500 px-3"
-          type="submit"
-        ></input>
-      </form>
-    </div>
-  );
-}
+ */
 
-export default FormCustomers;
+/**
+ *
+ */

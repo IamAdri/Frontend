@@ -3,4 +3,5 @@ export interface TeamMember {
   name: string;
   contactNumber: string;
   contactEmail: string;
+  customers?: { id: number; companyName: string }[];
 }

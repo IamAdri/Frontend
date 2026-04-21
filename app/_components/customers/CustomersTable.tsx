@@ -14,21 +14,22 @@ import DialogForDeleteRow from "../ui/DialogForDeleteRow";
 import useGridColsForCustomers from "./useGridColsForCustomers";
 import FormCustomers from "./FormCustomers";
 import { useDeleteRow } from "../ui/useDeleteRow";
-import { FormValuesCustomer } from "@/app/_interfaces/formValuesCustomer";
 import { useEditRow } from "../ui/useEditRow";
 
 function CustomersTable() {
+  const queryClient = useQueryClient();
   const [paginationModel, setPaginationModel] = useState<PaginationModel>({
     pageSize: 5,
     page: 0,
   });
+  //Fetch to get all customers
   const {
     isLoading,
     isFetching,
     data: customers,
     error,
   } = useQuery({
-    queryKey: ["customers", paginationModel.page, paginationModel.pageSize],
+    queryKey: ["customers", paginationModel],
     queryFn: () =>
       getAllCustomers({
         page: paginationModel.page + 1,
@@ -36,24 +37,33 @@ function CustomersTable() {
       }),
   });
 
-  const queryClient = useQueryClient();
-  const mutationDelete = useMutation({
-    mutationFn: (id: number) => deleteCustomer(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-    },
-  });
-  const mutationEdit = useMutation<void, unknown, FormValuesCustomer>({
-    mutationFn: (data) => updateCustomer(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-    },
-  });
-  const { openModalForDelete, open, closeModalForDelete, confirmFinalDelete } =
-    useDeleteRow(mutationDelete.mutate);
-  const { showEditForm, editRow, selectedRow, submitEditedRow, closeEditForm } =
-    useEditRow<Customer, FormValuesCustomer>(mutationEdit.mutate);
+  //Helper function to invalidate query of customers
+  const invalidateQueryKey = () =>
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
 
+  const { openModalForDelete, open, closeModalForDelete, rowIDToDelete } =
+    useDeleteRow();
+
+  //Mutate data when deleting a customer
+  const mutationDelete = useMutation({
+    mutationFn: deleteCustomer,
+    onSuccess: () => {
+      invalidateQueryKey();
+      closeModalForDelete();
+    },
+  });
+
+  const { showEditForm, editRow, selectedRow, closeEditForm } =
+    useEditRow<Customer>();
+
+  //Mutate data when editing a customer
+  const mutationEdit = useMutation({
+    mutationFn: updateCustomer,
+    onSuccess: () => {
+      invalidateQueryKey();
+      closeEditForm();
+    },
+  });
   const { rows, rowCount } = useRowsForDataGrid<Customer>(customers);
   const columns = useGridColsForCustomers({
     openModalForDelete,
@@ -69,7 +79,7 @@ function CustomersTable() {
     isLoading,
     isFetching,
   };
-
+  // console.log(customers);
   return (
     <>
       <DataGridTemplate {...gridProps} />
@@ -77,13 +87,15 @@ function CustomersTable() {
         open={open}
         rowType="customer"
         closeModalForDelete={closeModalForDelete}
-        confirmFinalDelete={confirmFinalDelete}
+        onConfirm={() => rowIDToDelete && mutationDelete.mutate(rowIDToDelete)}
+        isLoading={mutationDelete.isPending}
       />
       {showEditForm && selectedRow?.teamMembers && (
         <FormCustomers
-          closeEditForm={closeEditForm}
-          submitEditedRow={submitEditedRow}
+          onClose={closeEditForm}
+          onSubmit={(data) => mutationEdit.mutate(data)}
           selectedRow={selectedRow}
+          isSubmitting={mutationEdit.isPending}
         />
       )}
     </>

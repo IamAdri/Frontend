@@ -1,10 +1,6 @@
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import {
-  GridActionsCell,
-  GridActionsCellItem,
-  GridColDef,
-} from "@mui/x-data-grid";
+import { GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
 import { format, parse } from "date-fns";
 import { Customer } from "@/app/_interfaces/customer";
 
@@ -17,12 +13,7 @@ export default function useGridColsForCustomers({
   openModalForDelete,
   editRow,
 }: UseGridColumnsParams) {
-  const handleEditCustomer = (
-    row: Customer,
-    e: React.MouseEvent<HTMLElement>,
-  ) => {
-    console.log(`try edit ${row.id}`);
-    e.preventDefault();
+  const handleEditCustomer = (row: Customer) => {
     // console.log(row);
     const parsedDeadlineDate = parse(row.deadline, "dd.MM.yyyy", new Date());
     const parsedRow = {
@@ -31,14 +22,8 @@ export default function useGridColsForCustomers({
     };
     editRow(parsedRow);
   };
-  const handleDeleteCustomer = (
-    row: Customer,
-    e: React.MouseEvent<HTMLElement>,
-  ) => {
-    e.preventDefault();
-    openModalForDelete(row.id);
-  };
-  const columns: GridColDef[] = [
+
+  const columns: GridColDef<Customer>[] = [
     { field: "companyName", headerName: "Company Name", width: 200 },
     { field: "contactName", headerName: "Contact Name", width: 200 },
     { field: "contactEmail", headerName: "Contact Email", width: 200 },
@@ -65,7 +50,32 @@ export default function useGridColsForCustomers({
       type: "actions",
       headerName: "Actions",
       width: 200,
-      renderCell: (params) => (
+      getActions: (params) => [
+        <GridActionsCellItem
+          key="edit"
+          icon={<EditOutlinedIcon />}
+          label="Edit"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditCustomer(params.row);
+          }}
+          showInMenu
+        />,
+        <GridActionsCellItem
+          key="delete"
+          icon={<DeleteOutlineOutlinedIcon />}
+          label="Delete"
+          onClick={() => openModalForDelete(params.row.id)}
+          showInMenu
+        />,
+      ],
+    },
+  ];
+  return columns;
+}
+
+/**
+ *  renderCell: (params) => (
         <GridActionsCell {...params}>
           <GridActionsCellItem
             icon={<EditOutlinedIcon />}
@@ -87,7 +97,4 @@ export default function useGridColsForCustomers({
           />
         </GridActionsCell>
       ),
-    },
-  ];
-  return columns;
-}
+ */

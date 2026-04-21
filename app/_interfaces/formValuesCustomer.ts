@@ -6,7 +6,5 @@ export interface FormValuesCustomer {
   industry: string;
   projectType: string;
   status: string;
-  deadline: Date;
-  teamMember1: string;
-  teamMember2: string;
+  deadline: string;
 }

@@ -16,49 +16,76 @@ import useGridColumnsForTeamMembers from "./useGridColumnsForTeamMembers";
 import { useDeleteRow } from "../ui/useDeleteRow";
 import { useEditRow } from "../ui/useEditRow";
 import { FormValuesTeamMember } from "@/app/_interfaces/formValuesTeamMember";
+import { getAllCompanyNames } from "@/app/_lib/data-service-customers";
 
 function TeamMembersTable() {
+  const queryClient = useQueryClient();
   const [paginationModel, setPaginationModel] = useState<PaginationModel>({
     pageSize: 5,
     page: 0,
   });
+  //Fetch to get all team members
   const {
     isLoading,
     isFetching,
     data: teamMembers,
     error,
   } = useQuery({
-    queryKey: ["team-members", paginationModel.page, paginationModel.pageSize],
+    queryKey: ["team-members", paginationModel],
     queryFn: () =>
       getAllTeamMembers({
         page: paginationModel.page + 1,
         limit: paginationModel.pageSize,
       }),
   });
-  const queryClient = useQueryClient();
-  const mutationDelete = useMutation({
-    mutationFn: (id: number) => deleteTeamMember(id),
+
+  //Fetch to get all company names
+  const {
+    isLoading: isLoadingCompanyNames,
+    isFetching: isFetchingCompanyNames,
+    data: companyNames,
+    error: errorCompanyNames,
+  } = useQuery({
+    queryKey: ["company-names"],
+    queryFn: getAllCompanyNames,
+  });
+
+  //Helper function to invalidate query of customers
+  const invalidateQueryKey = () =>
+    queryClient.invalidateQueries({ queryKey: ["team-members"] });
+
+  const { showEditForm, editRow, selectedRow, closeEditForm } =
+    useEditRow<TeamMember>();
+
+  //Manipulate data when editing a team member
+  const mutationEdit = useMutation({
+    mutationFn: updateTeamMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      invalidateQueryKey();
+      closeEditForm();
     },
   });
 
-  const mutationEdit = useMutation<void, unknown, FormValuesTeamMember>({
-    mutationFn: (data) => updateTeamMember(data),
+  const { openModalForDelete, open, closeModalForDelete, rowIDToDelete } =
+    useDeleteRow();
+
+  //Manipulate data when deleting a team member
+  const mutationDelete = useMutation({
+    mutationFn: deleteTeamMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      invalidateQueryKey();
+      closeModalForDelete();
+    },
+    onError: () => {
+      alert("Could not delete team member!");
     },
   });
-  const { openModalForDelete, open, closeModalForDelete, confirmFinalDelete } =
-    useDeleteRow(mutationDelete.mutate);
-  const { showEditForm, editRow, selectedRow, submitEditedRow, closeEditForm } =
-    useEditRow<TeamMember, FormValuesTeamMember>(mutationEdit.mutate);
+
   const { rows, rowCount } = useRowsForDataGrid<TeamMember>(teamMembers);
   const columns = useGridColumnsForTeamMembers({
     openModalForDelete,
     editRow,
   });
-
   const gridProps = {
     rows,
     columns,
@@ -68,7 +95,7 @@ function TeamMembersTable() {
     isLoading,
     isFetching,
   };
-
+  // console.log(teamMembers);
   return (
     <div className="">
       <DataGridTemplate {...gridProps} />
@@ -76,13 +103,16 @@ function TeamMembersTable() {
         open={open}
         rowType="team member"
         closeModalForDelete={closeModalForDelete}
-        confirmFinalDelete={confirmFinalDelete}
+        onConfirm={() => rowIDToDelete && mutationDelete.mutate(rowIDToDelete)}
+        isLoading={mutationDelete.isPending}
       />
       {showEditForm && selectedRow && (
         <FormTeamMembers
-          closeEditForm={closeEditForm}
-          submitEditedRow={submitEditedRow}
+          onClose={closeEditForm}
+          onSubmit={(data) => mutationEdit.mutate(data)}
           selectedRow={selectedRow}
+          companyNames={companyNames ?? []}
+          isSubmitting={mutationEdit.isPending}
         />
       )}
     </div>

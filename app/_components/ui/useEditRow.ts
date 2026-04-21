@@ -1,40 +1,28 @@
 "use client";
 
-import { format, parse } from "date-fns";
-import { useState } from "react";
-import { FieldValues, useForm } from "react-hook-form";
+import { useCallback, useState } from "react";
 
-export function useEditRow<RowType, FormType extends FieldValues>(
-  mutationFn: (data: FormType) => void,
-) {
+export function useEditRow<RowType>() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedRow, setSelectedRow] = useState<RowType | null>(null);
-  const { reset } = useForm<FormType>();
 
-  const editRow = (row: RowType) => {
+  const editRow = useCallback((row: RowType) => {
     setShowEditForm(true);
     setSelectedRow(row);
-  };
+  }, []);
 
-  const submitEditedRow = (data: FormType) => {
-    mutationFn(data);
-    reset();
-    setShowEditForm(false);
-  };
-
-  const openEditForm = () => {
+  const openEditForm = useCallback(() => {
     setShowEditForm(true);
-  };
+  }, []);
 
-  const closeEditForm = () => {
-    reset();
+  const closeEditForm = useCallback(() => {
     setShowEditForm(false);
-  };
+    setSelectedRow(null);
+  }, []);
 
   return {
     showEditForm,
     editRow,
-    submitEditedRow,
     selectedRow,
     closeEditForm,
     openEditForm,

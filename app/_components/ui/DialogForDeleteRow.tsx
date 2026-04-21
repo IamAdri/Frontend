@@ -1,5 +1,6 @@
 import {
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,14 +14,16 @@ type DialogForDeleteProps = {
   open: boolean;
   rowType: string;
   closeModalForDelete: () => void;
-  confirmFinalDelete: () => void;
+  onConfirm: () => void;
+  isLoading: boolean;
 };
 
 function DialogForDeleteRow({
   open,
   rowType,
   closeModalForDelete,
-  confirmFinalDelete,
+  onConfirm,
+  isLoading,
 }: DialogForDeleteProps) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
@@ -29,7 +32,7 @@ function DialogForDeleteRow({
     <Dialog
       fullScreen={fullScreen}
       open={open}
-      onClose={closeModalForDelete}
+      onClose={isLoading ? undefined : closeModalForDelete}
       aria-labelledby="responsive-dialog-title"
     >
       <DialogTitle id="responsive-dialog-title">
@@ -41,11 +44,20 @@ function DialogForDeleteRow({
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={closeModalForDelete}>
+        <Button autoFocus onClick={closeModalForDelete} disabled={isLoading}>
           Cancel
         </Button>
-        <Button onClick={confirmFinalDelete} autoFocus>
-          Delete
+        <Button
+          onClick={onConfirm}
+          color="error"
+          variant="contained"
+          disabled={isLoading}
+          startIcon={
+            isLoading ? <CircularProgress size={20} color="inherit" /> : null
+          }
+          autoFocus
+        >
+          {isLoading ? "Deleting..." : "Delete"}
         </Button>
       </DialogActions>
     </Dialog>

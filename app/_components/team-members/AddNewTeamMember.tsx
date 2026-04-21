@@ -3,19 +3,30 @@
 import { postTeamMember } from "../../_lib/data-service-team-members";
 import FormTeamMembers from "./FormTeamMembers";
 import { useEditRow } from "../ui/useEditRow";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FormValuesTeamMember } from "@/app/_interfaces/formValuesTeamMember";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAllCompanyNames } from "@/app/_lib/data-service-customers";
 
 function AddNewTeamMember() {
   const queryClient = useQueryClient();
-  const mutationAdd = useMutation<void, unknown, FormValuesTeamMember>({
-    mutationFn: (data) => postTeamMember(data),
+
+  const {
+    isLoading: isLoadingCompanyNames,
+    isFetching: isFetchingCompanyNames,
+    data: companyNames,
+    error: errorCompanyNames,
+  } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: () => getAllCompanyNames(),
+  });
+  const { showEditForm, closeEditForm, openEditForm } = useEditRow();
+
+  const mutationAdd = useMutation({
+    mutationFn: postTeamMember,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      closeEditForm();
     },
   });
-  const { showEditForm, submitEditedRow, closeEditForm, openEditForm } =
-    useEditRow(mutationAdd.mutate);
   return (
     <>
       <button
@@ -26,8 +37,10 @@ function AddNewTeamMember() {
       </button>
       {showEditForm && (
         <FormTeamMembers
-          submitEditedRow={submitEditedRow}
-          closeEditForm={closeEditForm}
+          onSubmit={(data) => mutationAdd.mutate(data)}
+          onClose={closeEditForm}
+          companyNames={companyNames ?? []}
+          isSubmitting={mutationAdd.isPending}
         />
       )}
     </>

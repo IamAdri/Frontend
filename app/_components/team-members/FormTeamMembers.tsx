@@ -27,8 +27,8 @@ function FormTeamMembers({
         name: selectedRow.name,
         contactEmail: selectedRow.contactEmail,
         contactNumber: selectedRow.contactNumber,
-        project1: customers[0]?.companyName ?? "",
-        project2: customers[1]?.companyName ?? "",
+        project1: customers[0]?.companyName ?? "none",
+        project2: customers[1]?.companyName ?? "none",
       }
     : {};
   const {

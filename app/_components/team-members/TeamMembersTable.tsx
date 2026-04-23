@@ -51,8 +51,10 @@ function TeamMembersTable() {
   });
 
   //Helper function to invalidate query of customers
-  const invalidateQueryKey = () =>
+  const invalidateQueryKey = () => {
     queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+  };
 
   const { showEditForm, editRow, selectedRow, closeEditForm } =
     useEditRow<TeamMember>();

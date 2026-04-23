@@ -23,7 +23,6 @@ export default function useRowsForDataGrid<T extends DataRowBase>(
         const customersAssociated = dataRow.customers?.length
           ? dataRow.customers.map((customer) => customer.companyName)
           : ["no project assigned yet"];
-        console.log(dataRow);
         return {
           ...dataRow,
           createdAt: formatDate(dataRow.createdAt),

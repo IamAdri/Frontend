@@ -24,6 +24,7 @@ function AddNewTeamMember() {
     mutationFn: postTeamMember,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       closeEditForm();
     },
   });
